@@ -1,0 +1,2106 @@
+				Building RESTful API and Testing with Postman lab
+
+VS Code terminal and execute these commands separately:
+
+node -v
+npm -v
+If both display version numbers, continue to Step 3. If not, install Node.js using the link provided on page 1 of your manual: Node.js installer.
+
+You do not need to reinstall Node.js if it is already working.
+
+3. Create your project folder
+Open Command Prompt and type:
+
+mkdir REST
+cd REST
+This creates a folder named REST and moves into it.
+
+Initialize the project:
+
+npm init -y
+What happens? A package.json file is created to store your project information and dependencies.
+
+Install Express and Nodemon:
+
+npm install express
+npm install nodemon
+These commands download the packages into your project.
+
+4. Create the program
+Open the REST folder in VS Code. Create a new file named index.js.
+
+Enter the following program. It implements the three routes shown in your manual and handles invalid book IDs correctly.
+code:
+
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+const books = [
+    { title: 'Harry Potter', id: 1 },
+    { title: 'Twilight', id: 2 },
+    { title: 'Lorien Legacies', id: 3 }
+];
+
+// Route 1: Home page
+app.get('/', (req, res) => {
+    res.send('REST APIs are so much fun');
+});
+
+// Route 2: Get all books
+app.get('/api/books', (req, res) => {
+    res.json(books);
+});
+
+// Route 3: Get a book by ID
+app.get('/api/books/:id', (req, res) => {
+    const book = books.find(
+        b => b.id === parseInt(req.params.id)
+    );
+
+    if (!book) {
+        return res.status(404).send('Book not found');
+    }
+
+    res.json(book);
+});
+
+const port = process.env.PORT || 8080;
+
+app.listen(port, () => {
+    console.log(`Listening on port ${port}..`);
+});
+5. Run your server
+In the terminal, ensure that you are inside the REST folder. Execute:
+
+node index.js
+Expected terminal output:
+
+Listening on port 8080..
+Keep this terminal open while testing. The server must continue running for Postman to connect.
+
+You can also open http://localhost:8080 in your browser to see the home-page message.
+
+6. Test using Postman
+Open Postman, create a new HTTP request, select the GET method, enter the URL, and click Send.
+
+GET
+Request 1: Home page
+
+URL
+
+http://localhost:8080/
+
+Expected response
+
+REST APIs are so much fun
+GET
+Request 2: Get all books
+
+URL
+
+http://localhost:8080/api/books
+
+Expected response
+
+
+[
+  {
+    "title": "Harry Potter",
+    "id": 1
+  },
+  {
+    "title": "Twilight",
+    "id": 2
+  },
+  {
+    "title": "Lorien Legacies",
+    "id": 3
+  }
+]
+  
+GET
+Request 3: Get a specific book
+
+URL
+
+http://localhost:8080/api/books/2
+
+Expected response
+
+
+{
+  "title": "Twilight",
+  "id": 2
+}
+  
+GET
+Request 4: Invalid book ID
+
+URL
+
+http://localhost:8080/api/books/99
+
+Expected response
+
+404 Not Found
+Book not found
+
+
+				Experiment 2(b): Third-Party API Integration
+
+
+Step 1: Create the project
+1. Open VS Code.
+2. Create a folder named BookAPI.
+3. Open the folder in VS Code.
+4. Create these three files:
+BookAPI/
+├── index.html
+├── style.css
+└── script.js
+
+
+Step 2: Write the HTML code
+Open index.html and paste:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>📚 Book Management System</h2>
+        <p>Search books using the Open Library API</p>
+
+        <div class="search-box">
+            <input type="text" id="bookName"
+                   placeholder="Enter book name">
+            <button onclick="searchBook()">Search</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
+
+
+Save the file using Ctrl + S.
+Step 3: Write the CSS code
+Open style.css and paste:
+
+body {
+    font-family: Arial, sans-serif;
+    background: #eef2f7;
+    margin: 0;
+    padding: 30px;
+}
+
+.container {
+    max-width: 700px;
+    margin: 20px auto;
+    padding: 25px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px #cccccc;
+}
+
+h2, p {
+    text-align: center;
+}
+
+h2 {
+    color: #24446b;
+}
+
+.search-box {
+    display: flex;
+    gap: 8px;
+    margin: 20px 0;
+}
+
+input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #cccccc;
+    border-radius: 5px;
+}
+
+button {
+    padding: 10px 20px;
+    background: #2463eb;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.book {
+    padding: 15px;
+    margin: 12px 0;
+    background: #f8fafc;
+    border-left: 4px solid #2463eb;
+    border-radius: 5px;
+}
+
+.book h3 {
+    margin-top: 0;
+    color: #24446b;
+}
+
+.error {
+    color: #c62828;
+}
+
+
+
+Save the file.
+Step 4: Write the JavaScript code
+Open script.js and paste:
+
+async function searchBook() {
+    const book = document.getElementById("bookName").value.trim();
+    const results = document.getElementById("results");
+
+    if (!book) {
+        results.innerHTML = "<p class='error'>Enter a book name.</p>";
+        return;
+    }
+
+    results.innerHTML = "<p>Searching books...</p>";
+
+    try {
+        const url =
+            `https://openlibrary.org/search.json?q=${encodeURIComponent(book)}`;
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error("API request failed");
+        }
+
+        const data = await response.json();
+        displayBooks(data.docs);
+    } catch (error) {
+        results.innerHTML =
+            "<p class='error'>Unable to retrieve books. Check your internet connection.</p>";
+    }
+}
+
+function displayBooks(books) {
+    const results = document.getElementById("results");
+    results.innerHTML = "";
+
+    if (!books || books.length === 0) {
+        results.innerHTML = "<p>No books found.</p>";
+        return;
+    }
+
+    books.slice(0, 10).forEach(book => {
+        const title = book.title || "Unknown title";
+        const authors = book.author_name
+            ? book.author_name.join(", ")
+            : "Unknown author";
+        const year = book.first_publish_year || "Not available";
+
+        const card = document.createElement("div");
+        card.className = "book";
+
+        const heading = document.createElement("h3");
+        heading.textContent = title;
+
+        const author = document.createElement("p");
+        author.textContent = "Author: " + authors;
+
+        const published = document.createElement("p");
+        published.textContent = "Published: " + year;
+
+        card.append(heading, author, published);
+        results.appendChild(card);
+    });
+}
+
+
+
+Save the file. This code retrieves the book title, author, and first publication year from the API.
+Step 5: Test the API separately
+Open your browser and visit:  https://openlibrary.org/search.json?q=python&utm_source=chatgpt.com
+Test Open Library API: Python booksYou should see a JSON response containing book information. This confirms that the API is reachable.
+Step 6: Install Live Server
+1. In VS Code, click the Extensions icon on the left.
+2. Search for Live Server.
+3. Install the Live Server extension.
+4. Open index.html.
+5. Right-click inside the file.
+6. Select Open with Live Server.
+Your browser should open the Book Management System page.
+Step 7: Run and test the application
+Enter Python in the search box.
+
+
+
+Click Search.
+
+
+
+Wait for the API response.
+
+
+
+Check that book titles, authors, and publication years appear.
+
+
+
+Search for another book, such as Harry Potter, to test it again.
+
+
+                            exp 3:Integration of Firebase Services
+  
+Step 1: Check Node.js and npm
+Open VS Code, select Terminal → New Terminal, and run:
+node -v
+npm -v
+
+
+If both commands display version numbers, continue. Otherwise, install Node.js from the official website: Download Node.js and reopen VS Code.
+Step 2: Create the React project
+In the terminal, navigate to the folder where you want to create the project. For example:
+cd $HOME\Downloads
+
+
+Create the application:
+npx create-react-app firebase-react-crud
+
+
+Wait until the installation finishes. Then run:
+cd firebase-react-crud
+npm install firebase
+
+
+Open this project folder in VS Code. If the code command fails, use File → Open Folder and select firebase-react-crud.
+
+Important: Run the commands from the project root, where package.json exists. Do not create the project files inside the src folder.
+Step 3: Create a Firebase project
+1. Open the Firebase Console.
+2. Click Create a project.
+3. Enter the project name, for example firebase-react-crud.
+4. Complete the setup and open the project.
+5. Click the Web icon (</>) to register a web app.
+6. Enter an app nickname, such as React CRUD App.
+7. Click Register app.
+8. Copy the Firebase configuration object. You will use it in Step 5.
+Step 4: Enable Authentication and Firestore
+A. Enable Google sign-in
+1. In Firebase Console, open Build → Authentication.
+2. Click Get started if prompted.
+3. Open Sign-in method.
+4. Select Google.
+5. Enable it, select a support email, and click Save.
+B. Create Firestore Database
+1. Open Build → Firestore Database.
+2. Click Create database.
+3. Choose a location and complete the setup.
+4. Open the Rules tab. We'll configure the rules in Step 8.
+You do not need Firebase Storage for this version because we are not uploading images.
+Step 5: Create src/firebase.js
+In VS Code, expand the src folder. Create a file named firebase.js.
+
+Paste the following code and replace the placeholder values with the actual values from your Firebase web app configuration.
+
+import { initializeApp } from "firebase/app";
+import {
+  getAuth,
+  GoogleAuthProvider
+} from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+
+export const auth = getAuth(app);
+export const provider = new GoogleAuthProvider();
+export const db = getFirestore(app);
+
+
+
+Replace every placeholder with the corresponding value. Do not leave the placeholder text in the file.
+Step 6: Create src/AuthContext.js
+This file manages the signed-in user and provides the login and logout functions.
+
+import {
+  createContext,
+  useState,
+  useEffect,
+  useContext
+} from "react";
+
+import { auth, provider } from "./firebase";
+
+import {
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut
+} from "firebase/auth";
+
+const AuthContext = createContext();
+
+export const useAuth = () => useContext(AuthContext);
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (currentUser) => {
+        setUser(currentUser);
+        setAuthLoading(false);
+      }
+    );
+
+    return unsubscribe;
+  }, []);
+
+  const login = () => signInWithPopup(auth, provider);
+  const logout = () => signOut(auth);
+
+  return (
+    <AuthContext.Provider
+      value={{ user, login, logout, authLoading }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+
+
+Step 7: Create src/App.js
+This is the main application. It includes Google login, adding text items, listing items, updating items, deleting items, and error messages. No images or Storage are used.
+
+import { useEffect, useState } from "react";
+import { db } from "./firebase";
+
+import {
+  collection,
+  addDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  where
+} from "firebase/firestore";
+
+import { useAuth, AuthProvider } from "./AuthContext";
+
+function App() {
+  const { user, login, logout, authLoading } = useAuth();
+
+  const [items, setItems] = useState([]);
+  const [text, setText] = useState("");
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // READ: Load only the signed-in user's items
+  const loadItems = async () => {
+    if (!user) {
+      setItems([]);
+      return;
+    }
+
+    const itemsQuery = query(
+      collection(db, "items"),
+      where("owner", "==", user.uid)
+    );
+
+    const snapshot = await getDocs(itemsQuery);
+
+    setItems(
+      snapshot.docs.map((item) => ({
+        id: item.id,
+        ...item.data()
+      }))
+    );
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadItems().catch((err) => {
+        console.error(err);
+        setError(
+          (err.code ? err.code + ": " : "") + err.message
+        );
+      });
+    } else {
+      setItems([]);
+      setError("");
+      setStatus("");
+    }
+  }, [user]);
+
+  // CREATE: Add a new item
+  const addItem = async () => {
+    setError("");
+    setStatus("");
+
+    if (!user) {
+      setError("Please sign in first.");
+      return;
+    }
+
+    if (!text.trim()) {
+      setError("Please enter an item name.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await addDoc(collection(db, "items"), {
+        text: text.trim(),
+        owner: user.uid,
+        createdAt: new Date().toISOString()
+      });
+
+      setText("");
+      await loadItems();
+      setStatus("Item added successfully!");
+    } catch (err) {
+      console.error("Add failed:", err);
+      setError(
+        (err.code ? err.code + ": " : "") + err.message
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // UPDATE: Change the item text
+  const updateItem = async (id) => {
+    const newText = window.prompt(
+      "Enter the updated item name:"
+    );
+
+    if (!newText || !newText.trim()) return;
+
+    setError("");
+    setStatus("");
+
+    try {
+      await updateDoc(doc(db, "items", id), {
+        text: newText.trim()
+      });
+
+      await loadItems();
+      setStatus("Item updated successfully!");
+    } catch (err) {
+      console.error("Update failed:", err);
+      setError(
+        (err.code ? err.code + ": " : "") + err.message
+      );
+    }
+  };
+
+  // DELETE: Remove an item
+  const deleteItem = async (id) => {
+    if (!window.confirm("Delete this item?")) return;
+
+    setError("");
+    setStatus("");
+
+    try {
+      await deleteDoc(doc(db, "items", id));
+      await loadItems();
+      setStatus("Item deleted successfully!");
+    } catch (err) {
+      console.error("Delete failed:", err);
+      setError(
+        (err.code ? err.code + ": " : "") + err.message
+      );
+    }
+  };
+
+  const handleLogin = async () => {
+    setError("");
+
+    try {
+      await login();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleLogout = async () => {
+    setError("");
+
+    try {
+      await logout();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  if (authLoading) {
+    return <p>Checking login status...</p>;
+  }
+
+  return (
+    <div style={{
+      fontFamily: "Arial, sans-serif",
+      padding: "30px",
+      maxWidth: "700px"
+    }}>
+      <h1>React + Firebase CRUD App</h1>
+
+      {user ? (
+        <>
+          <p>Welcome, {user.displayName}</p>
+
+          <button onClick={handleLogout}>
+            Sign out
+          </button>
+
+          <hr />
+
+          <h2>Add Item</h2>
+
+          <input
+            type="text"
+            placeholder="Enter item name"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+
+          <button
+            onClick={addItem}
+            disabled={loading}
+            style={{ marginLeft: "10px" }}
+          >
+            {loading ? "Adding..." : "Add Item"}
+          </button>
+
+          {status && (
+            <p style={{ color: "green" }}>{status}</p>
+          )}
+
+          {error && (
+            <p style={{ color: "red" }}>
+              Error: {error}
+            </p>
+          )}
+
+          <h2>My Items</h2>
+
+          {items.length === 0 ? (
+            <p>No items found.</p>
+          ) : (
+            items.map((item) => (
+              <div
+                key={item.id}
+                style={{
+                  border: "1px solid #ccc",
+                  borderRadius: "5px",
+                  padding: "12px",
+                  marginBottom: "10px"
+                }}
+              >
+                <span>{item.text}</span>
+
+                <button
+                  onClick={() => updateItem(item.id)}
+                  style={{ marginLeft: "15px" }}
+                >
+                  Update
+                </button>
+
+                <button
+                  onClick={() => deleteItem(item.id)}
+                  style={{ marginLeft: "8px" }}
+                >
+                  Delete
+                </button>
+              </div>
+            ))
+          )}
+        </>
+      ) : (
+        <>
+          <p>Please sign in to manage your items.</p>
+
+          <button onClick={handleLogin}>
+            Sign in with Google
+          </button>
+
+          {error && (
+            <p style={{ color: "red" }}>{error}</p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function RootApp() {
+  return (
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+}
+
+
+
+Step 8: Configure Firestore security rules
+This step is essential. Without correct rules, you may see permission-denied.
+
+In Firebase Console, go to Firestore Database → Rules. Replace the rules with the following and click Publish.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /items/{itemId} {
+
+      allow create: if request.auth != null
+                    && request.resource.data.owner
+                       == request.auth.uid;
+
+      allow read: if request.auth != null
+                  && resource.data.owner
+                     == request.auth.uid;
+
+      allow update: if request.auth != null
+                    && resource.data.owner
+                       == request.auth.uid
+                    && request.resource.data.owner
+                       == request.auth.uid;
+
+      allow delete: if request.auth != null
+                    && resource.data.owner
+                       == request.auth.uid;
+    }
+  }
+}
+
+
+
+These rules let users create items assigned to their own user ID and access only their own records. The query in App.js uses the same owner field, which is necessary for Firestore to evaluate the read permissions.
+Step 9: Check src/index.js
+Replace its contents with:
+
+import React from "react";
+import ReactDOM from "react-dom/client";
+import RootApp from "./App";
+
+const root = ReactDOM.createRoot(
+  document.getElementById("root")
+);
+
+root.render(
+  <React.StrictMode>
+    <RootApp />
+  </React.StrictMode>
+);
+
+
+
+Ensure that public/index.html exists. Create React App normally creates it automatically. You do not need to change it for this lab.
+Step 10: Run the application
+In the VS Code terminal, make sure the current directory is the project root:
+cd $HOME\Downloads\firebase-react-crud
+npm start
+
+
+Open http://localhost:3000 if it does not open automatically.
+
+If the app is already running, save the files and let React reload them. You usually don't need to start a second server.
+
+					Experiment 4: Storage as a Service Implementation with Dropbox API.
+
+Step 1: Check Python
+Open VS Code, select Terminal → New Terminal, and run:
+
+python --version
+If that doesn't work, try:
+
+py --version
+If either command displays a Python version, continue to Step 2.
+
+Step 2: Create your project
+Run these commands in the VS Code terminal:
+
+mkdir DropboxLab
+cd DropboxLab
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+Install the Dropbox Python library:
+
+python -m pip install dropbox
+If PowerShell blocks virtual environment activation, you can skip activation and run python -m pip install dropbox using your normal Python environment.
+
+Step 3: Set your access token
+In the same VS Code terminal, enter:
+
+$env:DROPBOX_ACCESS_TOKEN = "YOUR_ACCESS_TOKEN"
+Replace YOUR_ACCESS_TOKEN with the token you generated. Keep it private, and don't put it directly in your Python source code.
+
+Step 4: Create a Python program
+Create a file named dropbox_upload.py in the DropboxLab folder.
+
+Copy this code:
+
+import osimport dropboxfrom dropbox.files import WriteMode# Get the access tokentoken = os.environ.get("DROPBOX_ACCESS_TOKEN")if not token:    raise ValueError("Please set DROPBOX_ACCESS_TOKEN first")# Connect to Dropboxdbx = dropbox.Dropbox(token)# Create a sample filewith open("test.txt", "w", encoding="utf-8") as f:    f.write("Hello from Python Dropbox API!")try:    # Upload the file to Dropbox    with open("test.txt", "rb") as f:        result = dbx.files_upload(            f.read(),            "/test.txt",            mode=WriteMode.overwrite        )    print("File uploaded successfully!")    print("Uploaded file:", result.name)    # List files in the Dropbox app folder    response = dbx.files_list_folder("")    print("\nFiles in Dropbox:")    for entry in response.entries:        print(entry.name)
+Step 5: Run the program
+In the VS Code terminal, execute:
+
+python dropbox_upload.py
+Expected output will look similar to:
+
+File uploaded successfully!
+Uploaded file: test.txt
+
+Files in Dropbox:
+test.txt
+Open your Dropbox account and verify that test.txt is present.  
+
+Step 1: Open your Dropbox app
+Open the Dropbox App Console.
+
+Click your existing app.
+
+Open the Permissions tab.
+
+Step 2: Enable the required permissions
+Find these two permissions and tick their checkboxes:
+
+
+files.content.write
+
+Allows your Python program to upload files.
+
+
+files.content.read
+
+Allows your Python program to list and read files.
+
+3. Scroll down and click Submit to save the permission changes.
+
+Step 3: Generate a new access token
+Since you changed the permissions, return to the app's Settings tab.
+
+Find the Generated access token section.
+
+Generate a new token if the console provides that option.
+
+Copy the token.
+
+Step 4: Update the token in VS Code
+In your existing PowerShell terminal, run:
+
+$env:DROPBOX_ACCESS_TOKEN = "PASTE_YOUR_NEW_TOKEN_HERE"
+Replace the placeholder with your new token. Keep it private.
+
+Step 5: Run your program again
+Your terminal is already in the correct folder, DropboxLab. Run:
+
+python dropbox_upload.py
+Expected output:
+
+File uploaded successfully!
+Uploaded file: test.txt
+
+Files in Dropbox:
+test.txt
+
+Your file should then appear in your Dropbox account.
+
+
+                         Database as a Service using MongoDB.
+
+Open MongoDB Atlas.
+
+Sign up using your email or Google account.
+
+Verify your email if prompted.
+
+Log in to the Atlas dashboard.
+
+Create a project if Atlas asks you to do so.
+
+MongoDB Atlas provides a cloud-hosted database, which is why this experiment demonstrates Database as a Service.
+
+Step 2: Create a cluster
+In Atlas, select Build a Database or Create.
+
+Choose the free cluster option if available.
+
+Select a cloud provider and a region.
+
+Give the cluster a name, such as Cluster0.
+
+Click Create Deployment or the equivalent button.
+
+Wait until the cluster is ready.
+
+Step 3: Create a database user
+Open Security → Database Access.
+
+Click Add New Database User.
+
+Enter a username, for example labuser.
+
+Create a password and keep it private.
+
+Give the user the read and write permissions required for the lab.
+
+Click Add User.
+
+Remember this username and password because you will need them for the Python connection.
+
+Step 4: Allow your computer to connect
+Open Security → Network Access.
+
+Click Add IP Address.
+
+Select Add Current IP Address.
+
+Confirm and save.
+
+Use your current IP address for the lab instead of allowing access from every IP address.
+Step 5: Get the connection string
+
+Open Database and select your cluster.
+
+Click Connect.
+
+Select Drivers.
+
+Choose Python and the appropriate driver version.
+
+Copy the connection string.
+
+It will look similar to this:
+
+mongodb+srv://labuser:<password>@cluster0.example.mongodb.net/
+Replace the username, password placeholder, and cluster address with your actual details. Do not share the connection string publicly.
+
+Step 6: Install Python and VS Code
+Open VS Code and create a folder named MongoDBLab.
+
+Open the VS Code terminal using Terminal → New Terminal.
+
+Check Python:
+
+python --version
+If that does not work on Windows, try:
+
+py --version
+Install the required libraries:
+
+python -m pip install pymongo dnspython
+If you use the Windows py command instead, run:
+
+py -m pip install pymongo dnspython
+Step 7: Create the Python program
+In VS Code, create a file named mongodb_lab.py.
+
+Paste the following code. Replace the connection string with your own Atlas connection string.
+
+from pymongo import MongoClient# Connect to MongoDB Atlasuri = "YOUR_MONGODB_ATLAS_CONNECTION_STRING"client = MongoClient(uri, serverSelectionTimeoutMS=10000)# Test the connectionclient.admin.command("ping")print("MongoDB Atlas connected successfully!")# Create database and collectiondb = client["student_db"]collection = db["students"]# 1. Insert one recordcollection.insert_one({    "name": "Kamal",    "mail": "kamal@example.com",    "phone": 10})print("1. One record inserted")# 2. Insert multiple recordscollection.insert_many([    {"name": "Vasanth", "mail": "vasanth@example.com", "phone": 11},    {"name": "Kala", "mail": "kala@example.com", "phone": 12}])print("2. Multiple records inserted")# 3. Read all recordsprint("\n3. All records:")for student in collection.find():    print(student)# 4. Read one particular recordprint("\n4. Particular record:")print(collection.find_one({"name": "Kamal"}))# 5. Update a recordcollection.update_one(    {"name": "Kala"},    {"$set": {"name": "Kala Updated"}})print("\n5. Record updated")# 6. Delete one recordcollection.delete_one({"name": "Vasanth"})print("6. Record deleted")# Display remaining recordsprint("\nRemaining records:")for student in collection.find():    print(student)client.close()
+Step 8: Run the program
+In the VS Code terminal, execute:
+
+python mongodb_lab.py
+If you use the Windows Python launcher:
+
+py mongodb_lab.py
+Expected output will be similar to:
+
+MongoDB Atlas connected successfully!
+1. One record inserted
+2. Multiple records inserted
+
+3. All records:
+... Kamal ...
+... Vasanth ...
+... Kala ...
+
+4. Particular record:
+... Kamal ...
+
+5. Record updated
+6. Record deleted
+
+Remaining records:
+... Kamal ...
+... Kala Updated ...
+The actual output includes MongoDB document IDs and other fields.
+
+Step 9: Verify the database in Atlas
+Return to the MongoDB Atlas dashboard.
+
+Open Database → Browse Collections.
+
+Find the student_db database.
+
+Open the students collection.
+
+Confirm that the remaining documents are visible.
+
+The final collection should contain Kamal and Kala Updated, while Vasanth has been deleted.
+
+ 		Experiment: Authentication as a Service (Auth0)
+
+Open Auth0.
+
+Click Sign Up and create an account.
+
+Verify your email if requested.
+
+Log in to the Auth0 Dashboard.
+
+Open Applications → Applications.
+
+Click Create Application.
+
+Enter the application name: Auth0PythonLab.
+
+Select Regular Web Applications.
+
+Click Create.
+
+Step 2: Configure the Auth0 application
+Open the application you created and select its Settings tab.
+
+Copy these values for later use:
+
+Domain
+
+Client ID
+
+Client Secret
+
+Keep your Client Secret private.
+
+Scroll to the application URL settings and configure:
+
+Allowed Callback URLs
+
+http://127.0.0.1:5000/callback
+Allowed Logout URLs
+
+http://127.0.0.1:5000
+Click Save Changes.
+
+These URLs must match the addresses used by your local Flask application.
+
+Step 3: Create the Python project in VS Code
+Create a folder named Auth0PythonLab.
+
+Open the folder in VS Code.
+
+Click Terminal → New Terminal.
+
+Create a virtual environment:
+
+python -m venv .venv
+5. Activate it:
+
+.\.venv\Scripts\Activate.ps1
+If PowerShell blocks activation, use Command Prompt in VS Code and run:
+
+.venv\Scripts\activate.bat
+Step 4: Install the required libraries
+Run this command in the VS Code terminal:
+
+python -m pip install Flask Authlib python-dotenv requests
+Wait until installation finishes.
+
+Step 5: Create the .env file
+In VS Code, create a file named .env in the project folder.
+
+Paste this structure and replace the placeholders with the values from your Auth0 Dashboard:
+
+AUTH0_DOMAIN=YOUR_AUTH0_DOMAIN
+AUTH0_CLIENT_ID=YOUR_CLIENT_ID
+AUTH0_CLIENT_SECRET=YOUR_CLIENT_SECRET
+APP_SECRET_KEY=YOUR_RANDOM_SECRET_KEY
+For AUTH0_DOMAIN, use the domain shown in your Auth0 application settings, without https://.
+
+Generate a random application secret by running this in the terminal:
+
+python -c "import secrets; print(secrets.token_hex(32))"
+Copy the generated value into APP_SECRET_KEY in .env.
+
+Do not share your .env file or upload it to GitHub.
+
+Step 6: Create app.py
+Create a file named app.py and paste this code:
+
+import osfrom urllib.parse import urlencodefrom flask import Flask, redirect, session, url_forfrom authlib.integrations.flask_client import OAuthfrom dotenv import load_dotenvload_dotenv()app = Flask(__name__)app.secret_key = os.environ["APP_SECRET_KEY"]oauth = OAuth(app)auth0 = oauth.register(    "auth0",    client_id=os.environ["AUTH0_CLIENT_ID"],    client_secret=os.environ["AUTH0_CLIENT_SECRET"],    server_metadata_url=(        f"https://{os.environ['AUTH0_DOMAIN']}/"        ".well-known/openid-configuration"    ),    client_kwargs={"scope": "openid profile email"},)@app.route("/")def home():    user = session.get("user")    if user:        name = user.get("name", "User")        email = user.get("email", "Not available")        return f"""        <h1>Auth0 Python Lab</h1>
+Step 7: Run the application
+In the VS Code terminal, execute:
+
+python app.py
+You should see output similar to:
+
+ * Running on http://127.0.0.1:5000
+Open your browser and visit:
+
+http://127.0.0.1:5000
+
+Step 8: Test authentication
+1. Login page
+Click Login with Auth0 on your local web application.
+
+2. Auth0 login
+The browser redirects to the Auth0-hosted login page. Sign in with a test account or sign up if your application permits it.
+
+3. Authenticated page
+After successful login, the browser returns to your application and displays the user's name, email, and a Logout link.
+
+Step 9: Test logout
+Click Logout.
+
+Auth0 signs the user out.
+
+You should return to your application's home page.
+
+The Login with Auth0 link should appear again.
+
+To stop the Flask server, return to the VS Code terminal and press Ctrl + C.
+
+				Experiment: Installation of Hadoop on a Single-Node Cluster
+
+sudo apt update
+sudo apt install openjdk-11-jdk ssh rsync -y
+sudo service ssh start
+cd ~
+wget https://archive.apache.org/dist/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz
+tar -xzf hadoop-3.3.6.tar.gz
+nano ~/.bashrc
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+export HADOOP_HOME=$HOME/hadoop-3.3.6
+export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
+source ~/.bashrc
+hadoop version
+readlink -f $(which java)
+nano $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+
+nano $HADOOP_HOME/etc/hadoop/core-site.xml
+
+<property>
+<name>fs.defaultFS</name>
+<value>hdfs://localhost:9000</value>
+</property>
+
+nano $HADOOP_HOME/etc/hadoop/hdfs-site.xml
+
+<property>
+<name>dfs.replication</name>
+<value>1</value>
+</property>
+
+nano $HADOOP_HOME/etc/hadoop/mapred-site.xml
+
+<property>
+<name>mapreduce.framework.name</name>
+<value>yarn</value>
+</property>
+
+nano $HADOOP_HOME/etc/hadoop/yarn-site.xml
+
+<property>
+<name>yarn.nodemanager.aux-services</name>
+<value>mapreduce_shuffle</value>
+</property>
+
+ssh-keygen -t rsa -P ""
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+ssh localhost
+exit
+hdfs namenode -format
+
+start-dfs.sh
+start-yarn.sh
+jps
+
+echo "hello hadoop hello mapreduce" > input.txt
+
+hdfs dfs -mkdir -p /input
+hdfs dfs -put input.txt /input/
+ls $HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar
+hadoop jar $HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-examples-3.3.6.jar wordcount /input /output
+hdfs dfs -cat /output/part-r-00000
+stop-yarn.sh
+stop-dfs.sh
+
+
+Hadoop(rithanya)
+
+
+
+Step 1: Install Java and SSH
+Open Ubuntu Terminal and run:
+
+sudo apt update
+sudo apt install openjdk-17-jdk openssh-server rsync -y
+Verify Java:
+
+java -version
+javac -version
+Step 2: Download Hadoop
+Open the official Apache Hadoop Releases page.
+
+Download a Hadoop binary .tar.gz archive. Use the version specified in your lab manual, if applicable.
+
+Open the Ubuntu terminal in the folder containing the downloaded file.
+
+For example, if it is in Downloads:
+
+cd ~/Downloads
+ls
+Extract it, replacing the example filename with your actual filename:
+
+tar -xzf hadoop-3.x.x.tar.gz
+Move the extracted directory to your home folder:
+
+mv hadoop-3.x.x ~/hadoop
+Replace hadoop-3.x.x with the actual extracted folder name.
+
+Step 3: Set environment variables
+Open the Bash configuration file:
+
+nano ~/.bashrc
+Add these lines at the bottom:
+
+export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+export HADOOP_HOME=$HOME/hadoop
+export PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin
+Save using Ctrl + O, press Enter, and exit with Ctrl + X.
+
+Apply the changes:
+
+source ~/.bashrc
+Check Hadoop:
+
+hadoop version
+Step 4: Configure Hadoop
+Edit each configuration file and replace its contents with the following XML.
+
+A. Configure core-site.xml
+
+nano $HADOOP_HOME/etc/hadoop/core-site.xml
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://localhost:9000</value>
+    </property>
+</configuration>
+B. Configure hdfs-site.xml
+
+nano $HADOOP_HOME/etc/hadoop/hdfs-site.xml
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>1</value>
+    </property>
+</configuration>
+C. Configure mapred-site.xml
+
+nano $HADOOP_HOME/etc/hadoop/mapred-site.xml
+<configuration>
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
+</configuration>
+D. Configure yarn-site.xml
+
+nano $HADOOP_HOME/etc/hadoop/yarn-site.xml
+<configuration>
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+</configuration>
+For each file, save with Ctrl + O, Enter, then Ctrl + X.
+
+Step 5: Set Java in Hadoop
+Run:
+
+readlink -f $(which java)
+If the result is, for example:
+
+/usr/lib/jvm/java-17-openjdk-amd64/bin/java
+Set JAVA_HOME in the Hadoop environment file:
+
+nano $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+Add or update this line with the correct path for your computer:
+
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+Save and exit.
+
+Step 6: Configure passwordless SSH
+Run these commands one at a time:
+
+sudo service ssh start
+ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+ssh localhost
+If asked whether to continue connecting, type yes and press Enter. Once connected, type:
+
+exit
+Step 7: Format the NameNode
+Run this command only during the initial setup:
+
+hdfs namenode -format
+Wait for the command to finish.
+
+Step 8: Start Hadoop services
+Start HDFS:
+
+start-dfs.sh
+Start YARN:
+
+start-yarn.sh
+Verify the services:
+
+jps
+You should see processes such as:
+
+NameNode
+
+DataNode
+
+SecondaryNameNode
+
+ResourceManager
+
+NodeManager
+
+You can also check the web interfaces:
+
+NameNode: http://localhost:9870
+
+ResourceManager: http://localhost:8088
+
+Step 9: Create the input file
+Create a directory:
+
+mkdir -p ~/wordcount/input
+Create the text file:
+
+nano ~/wordcount/input/sample.txt
+Enter:
+
+hello hadoop
+hello world
+hadoop is useful
+Save with Ctrl + O, Enter, then Ctrl + X.
+
+Step 10: Upload the file to HDFS
+Create the input directory in HDFS:
+
+hdfs dfs -mkdir -p /user/$USER/input
+Upload the file:
+
+hdfs dfs -put ~/wordcount/input/sample.txt /user/$USER/input/
+Verify:
+
+hdfs dfs -ls /user/$USER/input
+Step 11: Execute the WordCount MapReduce program
+Run this command:
+
+hadoop jar "$(find "$HADOOP_HOME/share/hadoop/mapreduce" -maxdepth 1 -name 'hadoop-mapreduce-examples-*.jar' | head -n 1)" wordcount /user/$USER/input /user/$USER/output
+Wait for the job to complete.
+
+Step 12: Display the output
+Run:
+
+hdfs dfs -cat /user/$USER/output/part-r-00000
+Expected output:
+
+hadoop  2
+hello   2
+is      1
+useful  1
+world   1
+Step 13: Stop Hadoop
+After completing the experiment, run:
+
+stop-yarn.sh
+stop-dfs.sh
+
+
+				Experiment: Implementation of Apache Spark
+
+
+sudo apt update
+sudo apt install default-jdk -y
+sudo apt install scala -y
+sudo apt install wget -y
+ls -lh spark-3.5.7-bin-hadoop3.tgz
+find ~ -name "spark-3.5.7-bin-hadoop3.tgz" 2>/dev/null
+ls /usr/local/spark
+spark-shell --version
+wget https://archive.apache.org/dist/spark/spark-3.5.7/spark-3.5.7-bin-hadoop3.tgz
+tar -xzf spark-3.5.7-bin-hadoop3.tgz
+sudo mv spark-3.5.7-bin-hadoop3 /usr/local/spark
+echo 'export SPARK_HOME=/usr/local/spark' >> ~/.bashrc
+echo 'export PATH=$PATH:$SPARK_HOME/bin' >> ~/.bashrc
+source ~/.bashrc
+spark-shell
+:quit
+echo "apple mango apple mango apple" > input.txt
+spark-shell
+val input = sc.textFile("input.txt")
+val words = input.flatMap(line => line.split(" "))
+val pairs = words.map(word => (word, 1))
+val counts = pairs.reduceByKey(_ + _)
+counts.collect().foreach(println)
+counts.saveAsTextFile("output")
+cat output/part-*
+
+spark(rithanya)
+
+
+Step 1: Check Java installation
+java -version
+If Java is not installed:
+
+sudo apt update
+sudo apt install default-jdk -y
+Step 2: Check Scala installation
+scala -version
+If Scala is not installed:
+
+sudo apt install scala -y
+Step 3: Download and extract Spark
+Open Apache Spark Downloads.
+
+Download the Spark binary compatible with your lab's Hadoop version.
+
+Open Ubuntu Terminal and go to Downloads:
+
+cd ~/Downloads
+ls
+4. Extract the downloaded archive, replacing the filename with the actual one:
+
+tar -xzf spark-<version>-bin-hadoop<version>.tgz
+5. Move the extracted folder to /usr/local/spark, replacing the folder name as required:
+
+sudo mv spark-<version>-bin-hadoop<version> /usr/local/spark
+Step 4: Configure Spark
+Open the environment configuration file:
+
+nano ~/.bashrc
+Add these lines at the bottom:
+
+export SPARK_HOME=/usr/local/spark
+export PATH=$PATH:$SPARK_HOME/bin
+Save using Ctrl + O, press Enter, and exit using Ctrl + X.
+
+Apply the configuration:
+
+source ~/.bashrc
+Verify Spark:
+
+spark-shell
+If the Spark Shell starts and displays a scala> prompt, the installation is working. Exit for now:
+
+:quit
+Step 5: Create the input file
+Create a working directory:
+
+mkdir -p ~/spark-lab
+cd ~/spark-lab
+Create the input file:
+
+nano input.txt
+Enter this text:
+
+hello spark
+hello hadoop
+spark is fast
+Save using Ctrl + O, Enter, and Ctrl + X.
+
+Verify:
+
+cat input.txt
+Step 6: Start Spark Shell
+cd ~/spark-lab
+spark-shell
+Wait until the scala> prompt appears.
+
+Step 7: Execute the WordCount program
+Type each command separately at the scala> prompt.
+
+1. Read the input file
+
+val inputfile = sc.textFile("input.txt")
+2. Split each line into words
+
+val words = inputfile.flatMap(line => line.split(" "))
+3. Assign a count of 1 to each word
+
+val pairs = words.map(word => (word, 1))
+4. Count repeated words
+
+val counts = pairs.reduceByKey(_ + _)
+5. Display the result
+
+counts.collect().foreach(println)
+Expected output, with the order possibly varying:
+
+(hello,2)
+(spark,2)
+(hadoop,1)
+(is,1)
+(fast,1)
+Step 8: Save the output
+At the scala> prompt, run:
+
+counts.saveAsTextFile("output")
+Exit Spark Shell:
+
+:quit
+Step 9: View the output file
+Back in the normal Ubuntu terminal, run:
+
+cd ~/spark-lab
+ls output
+Display the results:
+
+cat output/part-00000
+You should see the word counts for hello, spark, hadoop, is, and fast.
+
+If the output directory already exists, remove it before rerunning:
+
+rm -r ~/spark-lab/output
+
+None selected 
+
+Skip to content
+   
+		Implementation of Parallel Processing Using MPI and OpenMP
+
+
+sudo apt update
+sudo apt install mpich python3-mpi4py
+nano mpi.py
+
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+
+print("Hello from process", rank, "of", size)
+mpirun --oversubscribe -np 4 python3 mpi.py
+sudo apt update
+sudo apt install gcc
+
+nano omp.c
+
+#include <stdio.h>
+#include <omp.h>
+
+int main() {
+    #pragma omp parallel
+    {
+        printf("Hello from thread %d\n",
+               omp_get_thread_num());
+    }
+    return 0;
+}
+gcc -fopenmp omp.c -o omp
+export OMP_NUM_THREADS=4
+./omp
+nano sum.c
+
+#include <stdio.h>
+#include <omp.h>
+
+int main() {
+    int sum = 0;
+
+    #pragma omp parallel for reduction(+:sum)
+    for (int i = 1; i <= 10; i++) {
+        sum += i;
+    }
+
+    printf("Sum = %d\n", sum);
+    return 0;
+}
+gcc -fopenmp sum.c -o sum
+./sum
+
+
+
+Open MP and MPI(rithanya)
+
+
+Step 1: Open Ubuntu Terminal
+Press Ctrl + Alt + T.
+Step 2: Install Python and MPI
+Run these commands one by one:
+sudo apt update
+sudo apt install python3 -y
+sudo apt install mpich -y
+sudo apt install python3-pip -y
+sudo apt install libopenmpi-dev openmpi-bin -y
+
+Install mpi4py:
+python3 -m pip install mpi4py
+the last command fails because the system Python is externally managed, use:
+sudo apt install python3-mpi4py -y
+
+Verify the installation:
+mpirun --version
+python3 -c "from mpi4py import MPI; print(MPI.Get_library_version())"
+
+Step 3: Create the MPI program
+Create a Python file:nano mpi_example.py
+
+Enter this code:
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+print(f"Hello from process {rank} out of {size}")
+
+Save the file using Ctrl + O, Enter, then Ctrl + X.
+
+Step 4: Execute the MPI program
+Run:
+mpirun -np 2 python3 mpi_example.py
+
+ MPI reports that there are not enough available slots, use one process:
+mpirun -np 1 python3 mpi_example.py
+Expected output for two processes:
+Hello from process 0 out of 2
+Hello from process 1 out of 2
+
+Part B: OpenMP using C++
+
+Step 5: Install the OpenMP compiler support
+In Ubuntu Terminal, run:
+sudo apt update
+sudo apt install g++ libomp-dev -y
+Verify the compiler:
+g++ --version
+Step 6: Sample 1: Hello World using OpenMP
+Create the file:
+nano hello_omp.cpp
+Code :
+#include <omp.h>
+#include <iostream>
+using namespace std;
+
+int main() {
+    omp_set_num_threads(4);
+
+    #pragma omp parallel
+    {
+        int thread_id = omp_get_thread_num();
+        int total_threads = omp_get_num_threads();
+
+        cout << "Hello world from thread " << thread_id
+             << " out of " << total_threads << " threads.\n";
+    }
+
+    return 0;
+}
+Save and exit. Compile and run:
+g++ -fopenmp hello_omp.cpp -o hello_omp
+./hello_omp
+
+Step 7: Sample 2: Loop-level parallelism with reduction
+Create the file:
+nano loop_parallel.cpp
+#include <omp.h>
+#include <iostream>
+#include <chrono>
+using namespace std;
+using namespace chrono;
+
+long long serial_sum(int n) {
+    long long sum = 0;
+    for (int i = 1; i <= n; i++)
+        sum += i;
+    return sum;
+}
+
+long long parallel_sum(int n) {
+    long long sum = 0;
+
+    #pragma omp parallel for reduction(+:sum)
+    for (int i = 1; i <= n; i++)
+        sum += i;
+
+    return sum;
+}
+
+int main() {
+    int n = 10000000;
+
+    auto start1 = high_resolution_clock::now();
+    long long s1 = serial_sum(n);
+    auto end1 = high_resolution_clock::now();
+
+    auto start2 = high_resolution_clock::now();
+    long long s2 = parallel_sum(n);
+    auto end2 = high_resolution_clock::now();
+
+    cout << "Serial Result: " << s1 << endl;
+    cout << "Serial time: "
+         << duration<double>(end1 - start1).count() << " seconds\n";
+
+    cout << "Parallel Result: " << s2 << endl;
+    cout << "Parallel time: "
+         << duration<double>(end2 - start2).count() << " seconds\n";
+
+    return 0;
+}
+Compile and execute:
+g++ -fopenmp loop_parallel.cpp -o loop_parallel
+./loop_parallel
+Expected result for both serial and parallel sums:
+Serial Result: 50000005000000
+Parallel Result: 50000005000000
+
+Step 8: Sample 3: Using private
+Create the file:
+nano private.cpp
+#include <omp.h>
+#include <iostream>
+using namespace std;
+
+int main() {
+    int x = 10;
+
+    #pragma omp parallel private(x)
+    {
+        x = omp_get_thread_num();
+
+        cout << "Thread " << omp_get_thread_num()
+             << " has x = " << x << endl;
+    }
+
+    cout << "Outside parallel region, x = " << x << endl;
+    return 0;
+}
+Compile and run:
+g++ -fopenmp private.cpp -o private
+./private
+
+Step 9: Sample 4: Using firstprivate
+Create the file:
+nano first_private.cpp
+#include <omp.h>
+#include <iostream>
+using namespace std;
+
+int main() {
+    int x = 10;
+
+    #pragma omp parallel firstprivate(x)
+    {
+        cout << "Thread " << omp_get_thread_num()
+             << " starts with x = " << x << endl;
+
+        x += omp_get_thread_num();
+
+        cout << "Thread " << omp_get_thread_num()
+             << " ends with x = " << x << endl;
+    }
+
+    cout << "Outside parallel region, x = " << x << endl;
+    return 0;
+}
+Compile and run:
+g++ -fopenmp first_private.cpp -o first_private
+./first_private
+
+Step 10: Sample 5: Using lastprivate
+Create the file:
+nano last_private.cpp
+#include <omp.h>
+#include <iostream>
+using namespace std;
+
+int main() {
+    int x = 10;
+
+    #pragma omp parallel for lastprivate(x)
+    for (int i = 0; i < 4; i++) {
+        x = i;
+        cout << "Thread " << omp_get_thread_num()
+             << " processes iteration " << i
+             << ", x = " << x << endl;
+    }
+
+    cout << "Outside parallel region, x = " << x << endl;
+    return 0;
+}
+Compile and execute:
+g++ -fopenmp last_private.cpp -o last_private
+./last_private
+
+Step 11: Sample 6: Using a critical section
+Create the file:
+nano critical.cpp
+#include <omp.h>
+#include <iostream>
+using namespace std;
+
+int main() {
+    int total_sum = 0;
+
+    #pragma omp parallel for
+    for (int i = 0; i < 1000; i++) {
+        int local_sum = i;
+
+        #pragma omp critical
+        {
+            total_sum += local_sum;
+        }
+    }
+
+    cout << "Total sum: " << total_sum << endl;
+    return 0;
+}
+Compile and run:
+g++ -fopenmp critical.cpp -o critical
+./critical
+Expected output:
+Total sum: 499500
+
+
+
+
+			Experiment 11A: Installation of CloudSim 5.0
+
+Step 1: Check Java installation
+Open Command Prompt and run:
+
+java -version
+javac -version
+If both commands display version details, continue. Otherwise, ask your lab instructor which JDK version is required.
+
+Step 2: Download CloudSim 5.0
+Open the official release page:
+Download CloudSim 5.0 ( https://github.com/Cloudslab/cloudsim/releases/tag/5.0?utm_source=chatgpt.com )
+
+Scroll to Assets.
+
+Download the source code ZIP archive.
+
+Open Downloads.
+
+Right-click the ZIP file and select Extract All.
+
+Remember the extracted folder location.
+
+Step 3: Download Apache Commons Math
+Open:
+
+Apache Commons Math Download ( https://commons.apache.org/proper/commons-math/download_math.cgi?utm_source=chatgpt.com )
+
+Download the binary ZIP archive.
+
+Right-click it and select Extract All.
+
+Open the extracted folder.
+
+Locate the .jar files.
+
+Step 4: Open Eclipse and create a Java project
+Open Eclipse IDE.
+Click File → New → Java Project.
+
+Enter the project name:
+
+CloudSim
+
+Select the available Java execution environment.
+
+Click Finish.
+
+Your project should appear in the Package Explorer on the left.
+
+Step 5: Add Commons Math JAR files
+Right-click the CloudSim project.
+
+Click Properties.
+
+Select Java Build Path.
+
+Open the Libraries tab.
+
+Click Add External JARs.
+
+Browse to the extracted Commons Math folder.
+
+Select the required .jar files.
+
+Click Apply and Close.
+
+The libraries should appear under Referenced Libraries.
+
+Step 6: Add the CloudSim source files
+The manual's steps describe adding Commons Math libraries and checking the examples package. If your new Eclipse project is empty, you must also add the CloudSim source files.
+
+In Eclipse, right-click CloudSim.
+
+Select Import.
+
+Choose General → File System, then click Next.
+
+Browse to the extracted CloudSim folder.
+
+Select the relevant source folders and files.
+
+Import them into the project and click Finish.
+
+If the extracted release contains a complete Eclipse project, use File → Import → General → Existing Projects into Workspace instead and select that project folder.
+
+Step 7: Verify the installation
+Expand the project in Package Explorer.
+
+Locate the examples package.
+
+Look for an example such as CloudSimExample1.java.
+
+If the example has no compilation errors, right-click it.
+
+Select Run As → Java Application.
+
+Check the Console for the simulation output.
+
+
+				Experiment: Performance Analysis Using CloudAnalyst
+
+
+
+Step 1: Download CloudAnalyst
+1. Open the official download page used in your manual:  https://sourceforge.net/projects/cloudanalystnetbeans/?utm_source=chatgpt.com
+
+2. Download the ZIP file.
+3. Right-click the downloaded ZIP and select Extract All.
+4. Remember the extracted folder location.
+
+Step 2: Install and open NetBeans
+Download NetBeans from the official NetBeans website, if it is not already installed.   https://netbeans.apache.org/front/main/download/?utm_source=chatgpt.com
+
+Run the Windows installer.
+
+Complete the installation.
+
+Open NetBeans.
+
+Step 3: Open the CloudAnalyst project
+In NetBeans, click File → Open Project.
+
+Browse to the extracted CloudAnalyst folder.
+
+Select the project folder.
+
+Click Open Project.
+
+Wait for the project to load.
+
+If NetBeans does not recognize the folder as a project, check that you selected the correct extracted directory.
+
+Step 4: Run CloudAnalyst
+Click the green Run Project button at the top.
+
+If asked to select a main class, choose the CloudAnalyst main class provided by the project.
+
+Wait for the CloudAnalyst application window to open.
+
+You should see the simulation interface with a world map.
+
+Step 5: Configure the simulation
+
+
+
+Click Configure Simulation.
+
+Open the simulation configuration window.
+
+Review the Main Configuration settings.
+
+Configure the user bases, data centers, and simulation duration as required by your instructor.
+
+Review the advanced settings if your experiment requires them.
+
+Click Done.
+
+For your first run, keep the default values unless your lab manual specifies particular values.
+
+Step 6: Run the simulation
+Return to the main CloudAnalyst window.
+
+Click Run Simulation.
+
+Wait for the simulation to finish.
+
+Open or review the simulation results window.
+
+Step 7: Analyze the performance results
+
+
+Examine the metrics displayed in the results window, such as:
+
+Overall response time: Time taken for requests to receive a response.
+
+Data center processing time: Time associated with processing requests at data centers.
+
+Region-wise response time: Response-time differences across user regions.
+
+Data center request-servicing time: Time spent servicing requests at the data centers.
+
+Record the values shown by your actual simulation. Do not use invented values in your lab record.
+
+Step 8: Compare different configurations
+To demonstrate performance analysis:
+
+Run the simulation with the initial configuration.
+
+Record the response time and data center servicing time.
+
+Click Configure Simulation again.
+
+Change one parameter, such as the number of data centers or the user-base configuration.
+
+Click Done and run the simulation again.
+
+Compare the results from both runs.
+
+Changing one parameter at a time makes it easier to understand how that parameter affects performance.
+
